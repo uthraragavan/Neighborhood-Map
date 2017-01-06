@@ -16,6 +16,8 @@ var geocoder;
 var service;
 var reslist;
 var content;
+var cli_id = 'NEO0GEWJZYJ3LGMYG103A5AJ0L5JME2KRRNERFOMGHVZYP30';
+var cli_sec = 'J4ZFEQAJMHD3NKNPKAE3WLIRBCSMABBBRRAHKMGNZHWNPEO0';
 
 //
 // Variables to hold DOM variables for Off Canvas
@@ -307,8 +309,8 @@ function displayinfowindow(place) {
                      'v': "20131016",
                      'near': myviewModel.findPlace,
                      'query': pl.name + " " + myviewModel.findType,
-                     'client_id':  'NEO0GEWJZYJ3LGMYG103A5AJ0L5JME2KRRNERFOMGHVZYP30',
-                     'client_secret': 'J4ZFEQAJMHD3NKNPKAE3WLIRBCSMABBBRRAHKMGNZHWNPEO0'
+                     'client_id': cli_id,
+                     'client_secret': cli_sec
                      });
               $.ajax({
                   url: url,
