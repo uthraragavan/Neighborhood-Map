@@ -7,6 +7,7 @@
 //
 // Global variables
 //
+'use strict';
 var drawer = document.querySelector('#drawer');
 var map;
 var infowindow;
