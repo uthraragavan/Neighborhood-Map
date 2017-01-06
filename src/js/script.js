@@ -69,6 +69,7 @@ function AppViewModel() {
               t.temp = data.current_observation.temp_f + "ºF";
               t.weather = data.current_observation.weather;
               t.weatherurl = data.current_observation.icon_url;
+              t.weatherurl = t.weatherurl.replace("http:", "https:");
               console.log(t.weatherurl);
               t.humidity = data.current_observation.relative_humidity;
             }
