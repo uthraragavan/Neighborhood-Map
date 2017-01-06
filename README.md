@@ -3,8 +3,10 @@ Neighborhood Map is a web application where the user provides two inputs:'What t
 * Current weather
 * List of places marked on the map.
 On clicking a place in the list on the side navigation doawer, an information window opens up near the place merker on the map displaying additional information about the place such as - Name and address, Phone number, Google review and Website URL.
+
 ### APIs used
 Google Maps, Google Places Services, Foursquare and Wunderground.
+
 ### Setup Instructions to host your own web server
 * **Node JS for localhost web server**:  Install Node JS by following instructions from here https://nodejs.org/en/download/
 * **Ngrok for webserver over proxy**: Install ngrok by following instructions from here: https://ngrok.com/download
