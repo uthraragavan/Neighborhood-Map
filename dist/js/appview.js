@@ -1,0 +1,1 @@
+function AppViewModel(){this.findType="Restaurants",this.findPlace="Bellevue,WA",this.menuClick=function(e){drawer.classList.toggle("open")},this.mainClick=function(e){drawer.classList.remove("open")}}var drawer=document.querySelector("#drawer");ko.applyBindings(new AppViewModel);
