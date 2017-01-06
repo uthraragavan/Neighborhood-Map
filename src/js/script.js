@@ -56,7 +56,7 @@ function AppViewModel() {
     // Function to gather weather data by using AJAX - wunderground API
     //
     this.getWeather = function() {
-        url = "http://api.wunderground.com/api/ef5a156e62f050d2/conditions/q/" +
+        url = "https://api.wunderground.com/api/ef5a156e62f050d2/conditions/q/" +
               self.findPlace + ".json";
         $.ajax({
           url: url,
