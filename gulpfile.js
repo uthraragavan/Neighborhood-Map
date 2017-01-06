@@ -13,7 +13,8 @@ var gulp = require('gulp'),
     cleanCSS = require('gulp-clean-css'),
     imagemin = require('gulp-imagemin'),
     imageresize = require('gulp-image-resize'),
-    htmlmin = require('gulp-htmlmin');
+    htmlmin = require('gulp-htmlmin'),
+    gutil = require('gulp-util');
 
 var browserSync = require('browser-sync').create();
 var ngrok = require('ngrok');
@@ -139,7 +140,7 @@ gulp.task('app-2', function() {
 //
 gulp.task('scripts-1', function() {
     gulp.src('./src/js/*.js')
-        .pipe(uglify())
+        .pipe(uglify().on('error', gutil.log))
         .pipe(rename({
             dirname: "js",
             //suffix: "-min",
@@ -153,7 +154,7 @@ gulp.task('scripts-1', function() {
 //
 gulp.task('scripts-2', function() {
     gulp.src('./src/views/js/*.js')
-        .pipe(uglify())
+        .pipe(uglify().on('error', gutil.log))
         .pipe(rename({
             dirname: "views/js",
             //suffix: "-min",

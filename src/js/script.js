@@ -1,6 +1,12 @@
- <!-- // This example requires the Places library. Include the libraries=places
-      // parameter when you first load the API. For example:
-      // -->
+//
+// Filename: script.js
+// Date last modified: January 4 2017
+// Author: Uthra Vijayaragavan
+//
+
+//
+// Global variables
+//
 var drawer = document.querySelector('#drawer');
 var map;
 var infowindow;
@@ -10,98 +16,124 @@ var geocoder;
 var service;
 var reslist;
 var content;
+
+//
+// Variables to hold DOM variables for Off Canvas
+//
 var menu = document.querySelector('#menu');
-      var main = document.querySelector('.main');
-      var drawer = document.querySelector('#drawer');
+var main = document.querySelector('.main');
+var drawer = document.querySelector('#drawer');
 
-      menu.addEventListener('click', function(e) {
-        drawer.classList.toggle('open');
-        e.stopPropagation();
-      });
-      main.addEventListener('click', function() {
-        drawer.classList.remove('open');
-      });
+//
+// Off Canvas handling
+//
+menu.addEventListener('click', function(e) {
+    drawer.classList.toggle('open');
+    e.stopPropagation();
+});
 
+main.addEventListener('click', function() {
+    drawer.classList.remove('open');
+});
+
+//
+// Knockout View Model
+//
 function AppViewModel() {
     var self = this;
-
+    //
+    // View Model variables
+    //
     this.findType = "Restaurants";
     this.findPlace = "Manhattan, NY";
     this.resultList = ko.observableArray([]);
-    this.weatherdata = ko.observable({"temp":"--ºF","weather":"No Weather Data","weatherurl":"","humidity":"--%"});
-    // this.weatherdata = ko.computed(this.getWeather,this);
+    this.weatherdata = ko.observable({"temp":"--ºF", "weather":"No Weather Data", "weatherurl":"", "humidity":"--%"});
+
+    //
+    // Function to gather weather data by using AJAX - wunderground API
+    //
     this.getWeather = function() {
-
-    $.ajax({
-          url: "http://api.wunderground.com/api/ef5a156e62f050d2/conditions/q/" +
-          self.findPlace + ".json",
-          dataType: "json",
-          success: function(data) {
-              var t = {"temp":"--ºF","weather":"No Weather Data","weatherurl":"","humidity":"--%"};
-              if(data.current_observation)
-              {
-                t.temp=data.current_observation.temp_f + "ºF";
-                t.weather=data.current_observation.weather;
-                t.weatherurl=data.current_observation.icon_url;
-                t.humidity = data.current_observation.relative_humidity;
-              }
-
-              self.weatherdata(t);
-              // console.log(data);
-          // data.temp = url.current_observation.temp_f;
-          // data.weather = url.current_observation.weather;
-          // data.weatherurl = url.current_observation.icon_url;
-          // // $(".conditions").html("Current temperature in " + location + " is: " + temp_f + "ºF");
-          // return data;
-          }
+        url = "http://api.wunderground.com/api/ef5a156e62f050d2/conditions/q/" +
+              self.findPlace + ".json";
+        $.ajax({
+          url: url,
+          method: 'GET',
+          dataType: "json"
+        }).done(function(data) {
+           var t = {"temp":"--ºF", "weather":"No Weather Data", "weatherurl":"", "humidity":"--%"};
+           if(data.current_observation)
+            {
+              t.temp = data.current_observation.temp_f + "ºF";
+              t.weather = data.current_observation.weather;
+              t.weatherurl = data.current_observation.icon_url;
+              console.log(t.weatherurl);
+              t.humidity = data.current_observation.relative_humidity;
+            }
+            self.weatherdata(t);
+        }).fail(function(e) {
+          var t = {"temp":"--ºF", "weather":"No Weather Data", "weatherurl":"", "humidity":"--%"};
+          self.weatherdata(t);
+          console.log(e);
+          throw e;
         });
+    }
 
-    };
+    //
+    // Invoke getweather on creating View Model instance itself
+    // so that the weather data binds correctly for display
+    //
     this.getWeather();
 
+    //
+    // Function to create the list of places returned from Google Places API
+    // Parameter:
+    //r [in] Global Results data list
     this.computeresultList = function(r) {
-
-      for(var i=0;i<r.length;i++)
-      {
-        this.resultList.push(r[i]);
-      }
+        for(var i =0 ; i < r.length; i++)
+        {
+            this.resultList.push(r[i]);
+        }
     };
+
+    //
+    // Function to handle click of a place on the Navigation list
+    // to display the place information in infowindow
+    // Parameters:
+    // i [in] Index of the places list
     this.linkClick = function(i) {
-      console.log(self.resultList()[i]);
-
-      displayinfowindow(self.resultList()[i]);
-
-      // infowindow.setContent('<p>'+name+'<p>');
-
-      // infowindow.open(map, mark);
-
+        console.log(self.resultList()[i]);
+        displayinfowindow(self.resultList()[i]);
     };
+
+    //
+    // Function to handle click of Submit button.
+    // Initializes map again and fetches weather data
+    //
     this.submitQuery = function() {
-      if(this.resultList())
-      {
-
-          this.resultList([]);
-
-      }
-      initMap();
-      this.getWeather();
-
+        if(this.resultList())
+        {
+            this.resultList([]);
+        }
+        initMap();
+        this.getWeather();
     };
 
 }
 
+//
 // Activates knockout.js
+//
 var myviewModel = new AppViewModel();
 ko.applyBindings(myviewModel);
 
+////////////////////////////////////////////////////////////////////////
+////////////// Google Maps API related functions ///////////////////////
+////////////////////////////////////////////////////////////////////////
 
-
-
-
-
+//
+// Initial Map Creation function called from index.html
+//
 function initMap() {
-
-
     map = new google.maps.Map(document.getElementById('map'), {
       center: pyrmont,
       zoom: 16
@@ -109,57 +141,82 @@ function initMap() {
     service = new google.maps.places.PlacesService(map);
     infowindow = new google.maps.InfoWindow();
     geocoder = new google.maps.Geocoder();
-
     geocodeAddress(geocoder, map);
-
 }
 
+//
+// Function to mark the given address the user types in the search field
+// on the map using marker and fetch the places list by issuing a Google API Text Search
+// Parameter:
+// geocoder [in] Global Geocoder object
+// resultsMap  [in] Global Map object
+function geocodeAddress(geocoder, resultsMap) {
+    var address = myviewModel.findPlace;
+    var ret;
 
-
-
-    function displayinfowindow(place) {
-          content = "<span class='label label-primary'>" + place.rating + "</span>";
-          content += " ";
-          content += "<span class='glyphicon glyphicon-star' aria-hidden='true'></span>";
-          content += "<h4 style='display:inline;'>" + " " + place.name + "</h4>";
-          content += "<img src='" + place.url + "' class='pull-right' alt='displayphoto'>";
-          content += "<h6>" + place.formatted_address + "</h6>";
-          content += "<h6>" + place.open + "</h6>";
-          service.getDetails({
-            placeId: place.place_id
-            }, function(pl, st, marker) {
-                  if (st === google.maps.places.PlacesServiceStatus.OK) {
-                  // console.log(pl);
-                  content += "<img src='img/phone.png' alt='phoneimage'>";
-                  if(pl.formatted_phone_number) {
-                    content += "<h6 style='display:inline;'>" + " " + pl.formatted_phone_number + "</h6>";
-                  }
-                  else {
-                    content += "<p>" + "Not available" + "</p>";
-                  }
-                  if(pl.reviews) {
-                      content += "<p>" + '"' + pl.reviews[0].text + '"' + "</p>";
-                  }
-
+    // Fetch the Lat and Lng given the address and mark on the map
+    geocoder.geocode({'address': address}, function(results, status) {
+        if (status === 'OK') {
+              pyrmont = results[0].geometry.location;
+              resultsMap.setCenter(results[0].geometry.location);
+              var photos = results[0].photos;
+              var image;
+              if (!photos) {
+                  image = 'https://developers.google.com/maps/documentation/javascript/examples/full/images/beachflag.png';
               }
-              infowindow.setContent(content);
-
+              else {
+                image = photos[0].getUrl({'maxWidth': 35, 'maxHeight': 35});
+              }
+              var marker = new google.maps.Marker({
+              map: resultsMap,
+              position: pyrmont,
+              icon: image
               });
-          infowindow.open(map, place.mark);
-    }
+              // Add an event listener to display the infowindow for the address
+              // when marker on it is clicked
+              google.maps.event.addListener(marker, 'click', function() {
+                  infowindow.setContent('<h1>' + place.name + '</h1>');
+                  infowindow.open(map, this);
+              });
+              // Issue a text Search to find related places in the given address
+              // as per the search query. The reslts are updated
+              // in the callback function
+              service.textSearch({
+                location: results[0].geometry.location,
+                radius: '500',
+                query: myviewModel.findType
+              }, callback);
+        }
+        else {
+            alert('Geocode was not successful for the following reason: ' + status);
+        }
+    });
+}
 
-
-    function callback(results, status) {
-      // reslist = [{'Name':'Uthra','Age':25},{'Name':'Balaji','Age':28}];
-      if(reslist)
-      {
+//
+// Call back function for the Google API Text Search
+// Place results are obtained in the results parameter
+// Status of the Text Search updated in status parameter
+// Paremeter:
+// results [out] Results data list
+// status [out] Status of callback
+function callback(results, status) {
+    // If the reslist array is not empty, empty it.
+    // We need to update it with fresh data for the new place entered.
+    if(reslist)
+    {
        reslist = [];
        reslist.length=0;
-      }
-      reslist = results;
+    }
+    //
+    // Update the reslist array with the newly obtained results
+    //
+    reslist = results;
 
-      if (status === google.maps.places.PlacesServiceStatus.OK) {
-          for (var i = 0; i < results.length; i++) {
+    //Iterate through the results to extract information about each place
+    if (status === google.maps.places.PlacesServiceStatus.OK) {
+        for (var i = 0; i < results.length; i++) {
+            // Create marker for the place
             reslist[i].mark = createMarker(results[i]);
             var url;
             var photos = results[i].photos;
@@ -170,12 +227,16 @@ function initMap() {
             {
               reslist[i].url = photos[0].getUrl({'maxWidth': 50, 'maxHeight': 50});
             }
+
+            //Get the rating of place. If not found set it to NR
             if(!results[i].rating) {
               reslist[i].rating = "NR";
             }
             else {
               reslist[i].rating = results[i].rating;
             }
+
+            //Get the Open Now field of the place
             if(results[i].opening_hours) {
               if(results[i].opening_hours.open_now === true) {
                 reslist[i].open = "Open Now: Yes";
@@ -190,105 +251,118 @@ function initMap() {
                 reslist[i].open = "Open Now: --"
             }
 
-          }
-      }
+        }
+    }
+    //Update the View Model's resultList array as per teh reslist
+    myviewModel.computeresultList(reslist);
+}
 
-      myviewModel.computeresultList(reslist);
+//
+// Function to display info window when
+// a place is clicked from side navigation list
+// Parameter:
+// place [in] Place object
+function displayinfowindow(place) {
+
+    //Bounce the marker of clicked place
+    if (place.mark.getAnimation() !== null) {
+        place.mark.setAnimation(null);
+    } else {
+        place.mark.setAnimation(google.maps.Animation.BOUNCE);
     }
 
-    function createMarker(place) {
-        var placeLoc = place.geometry.location;
-        var marker = new google.maps.Marker({
-          map: map,
-          position: place.geometry.location
-        });
+    // Set the content of info window
+    content = "<span class='label label-primary'>" + place.rating + "</span>";
+    content += " ";
+    content += "<span class='glyphicon glyphicon-star' aria-hidden='true'></span>";
+    content += "<h4 style='display:inline;'>" + " " + place.name + "</h4>";
+    content += "<img src='" + place.url + "' class='pull-right' alt='displayphoto'>";
+    content += "<h6>" + place.formatted_address + "</h6>";
+    content += "<h6>" + place.open + "</h6>";
 
-        // service.getDetails({
-        //     placeId: place.place_id
-        //     }, function(pl,st) {
-        //           if (st === google.maps.places.PlacesServiceStatus.OK) {
-
-        //               console.log(marker);
-        //             // placelist.phone=pl.formatted_phone_number;
-        //             // placelist.review=pl.reviews[0].text;
-        //             // placelist.address=pl.formatted_address;
-
-        //         }
-        //       });
-        google.maps.event.addListener(marker, 'click', function() {
-          content = "<span class='label label-primary'>" + place.rating + "</span>";
-          content += " ";
-          content += "<span class='glyphicon glyphicon-star' aria-hidden='true'></span>";
-          content += "<h4 style='display:inline;'>" + " " + place.name + "</h4>";
-          content += "<img src='" + place.url + "' class='pull-right' alt='displayphoto'>";
-          content += "<h6>" + place.formatted_address + "</h6>";
-          content += "<h6>" + place.open + "</h6>";
-
-          service.getDetails({
-            placeId: place.place_id
-            }, function(pl, st, marker) {
-                  if (st === google.maps.places.PlacesServiceStatus.OK) {
-                  content += "<img src='img/phone.png' alt='phoneimage'>";
-                  if(pl.formatted_phone_number) {
-                    content += "<h6 style='display:inline;'>" + " " + pl.formatted_phone_number + "</h6>";
-                  }
-                  else {
-                    content += "<p>" + "Not available" + "</p>";
-                  }
-                  if(pl.reviews[0]) {
+    // In the infowindow, find additional details about the place such as
+    // phone number and review to be displayed only in infowindow
+    // using Googlr Places Service API
+    service.getDetails({
+        placeId: place.place_id
+        }, function(pl, st, marker) {
+              if (st === google.maps.places.PlacesServiceStatus.OK) {
+                    content += "<img src='img/phone.png' alt='phoneimage'>";
+                    if(pl.formatted_phone_number) {
+                      content += "<h6 style='display:inline;'>" + " " + pl.formatted_phone_number + "</h6>";
+                    }
+                    else {
+                     content += "<h6 style='display:inline;'>" + "--" + "</h6>";
+                    }
+                  if(pl.reviews) {
                       content += "<p>" + '"' + pl.reviews[0].text + '"' + "</p>";
                   }
 
-
               }
-              infowindow.setContent(content);
+              // Additional information such as Website Url of the
+              // place displayed only in infowindow
+              // that is fetched using Ajax request from Third Party API such as FourSquare
+              url = "https://api.foursquare.com/v2/venues/search"
+              url += '?' + $.param({
+                     'v': "20131016",
+                     'near': myviewModel.findPlace,
+                     'query': pl.name + " " + myviewModel.findType,
+                     'client_id':  'NEO0GEWJZYJ3LGMYG103A5AJ0L5JME2KRRNERFOMGHVZYP30',
+                     'client_secret': 'J4ZFEQAJMHD3NKNPKAE3WLIRBCSMABBBRRAHKMGNZHWNPEO0'
+                     });
+              $.ajax({
+                  url: url,
+                  method: 'GET',
+                  dataType: "json"
+              }).done(function(data) {
+                  console.log(data);
+                  if(data.response.venues.length!=0) {
+                       if(data.response.venues[0].url)
+                        content += "<h6>Website: " + data.response.venues[0].url + "</h6>";
+                      else
+                        content += "<h6>Website: --</h6>"
+                  }
+                  else {
+                     content += "<h6>Website: --</h6>";
+                  }
 
+                  //Set the content of infowindow
+                  infowindow.setContent(content);
+
+              }).fail(function(e) {
+                  console.log(e);
+                  content += "<h6>Website: --</h6>";
+                  infowindow.setContent(content);
+                  throw(e);
               });
-          infowindow.open(map, marker);
+              //infowindow.setContent(content);
 
-        });
-        return marker;
-        //return marker;
-    }
-    function geocodeAddress(geocoder, resultsMap) {
-        var address = myviewModel.findPlace;
-        var ret;
+    });
 
-        geocoder.geocode({'address': address}, function(results, status) {
-          if (status === 'OK') {
-             // alert(results[0].geometry.location);
-             // pyrmont.lat=results[0].geometry.location.lat;
-             // pyrmont.lng=results[0].geometry.location.lng;
-             pyrmont = results[0].geometry.location;
-             resultsMap.setCenter(results[0].geometry.location);
-             var photos = results[0].photos;
-             var image;
-             if (!photos) {
-               image = 'https://developers.google.com/maps/documentation/javascript/examples/full/images/beachflag.png';
-             }
-             else {
-              image = photos[0].getUrl({'maxWidth': 35, 'maxHeight': 35});
-             }
-             var marker = new google.maps.Marker({
-               map: resultsMap,
-               position: pyrmont,
-               icon: image
-             });
-              google.maps.event.addListener(marker, 'click', function() {
-                  infowindow.setContent('<h1>' + place.name + '</h1>');
-                  infowindow.open(map, this);
-              });
-               service.textSearch({
-                location: results[0].geometry.location,
-                radius: '500',
-                query: myviewModel.findType
-                }, callback);
+    //Open the infowindow at the marker's place
+    infowindow.open(map, place.mark);
+}
+
+//
+// Function to create marker on the map given a place
+// Paremeter
+// place [in] Place object
+function createMarker(place) {
+    // Create the marker on the map in the given place's Lat and Lng
+    var placeLoc = place.geometry.location;
+    var marker = new google.maps.Marker({
+    map: map,
+    position: place.geometry.location,
+    animation: google.maps.Animation.DROP
+    });
+
+    // Add a click event listener to the marker to
+    // display the infowindow when clicked
+    google.maps.event.addListener(marker, 'click', function() {
+      displayinfowindow(place);
+    });
+    return marker;
+}
 
 
-
-          } else {
-            alert('Geocode was not successful for the following reason: ' + status);
-          }
-        });
-      }
 
