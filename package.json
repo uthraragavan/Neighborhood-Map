@@ -1,0 +1,32 @@
+{
+  "name": "naighborhoodmap",
+  "version": "1.0.0",
+  "description": "Neighborhood Map is a web application where the user provides two inputs:'What to find' and 'Where to find'. For example, 'Restaurants' in  Manhattan, NY. The application then populates the Google Map to display places of interest near the location entered using markers. There is also a side navigation drawer that displays the following items in the location entered:",
+  "main": "index.html",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/uthraragavan/Neighborhood-Map.git"
+  },
+  "author": "Uthra Vijayaragavan",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/uthraragavan/Neighborhood-Map/issues"
+  },
+  "homepage": "https://github.com/uthraragavan/Neighborhood-Map#readme",
+  "devDependencies": {
+    "browser-sync": "^2.18.6",
+    "gulp": "^3.9.1",
+    "gulp-clean-css": "^2.3.2",
+    "gulp-htmlmin": "^3.0.0",
+    "gulp-image-resize": "^0.11.0",
+    "gulp-imagemin": "^3.1.1",
+    "gulp-rename": "^1.2.2",
+    "gulp-uglify": "^2.0.0",
+    "ngrok": "^2.2.4",
+    "psi": "^2.0.4",
+    "run-sequence": "^1.2.2"
+  }
+}
