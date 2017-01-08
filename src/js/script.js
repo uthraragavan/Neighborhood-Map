@@ -133,7 +133,10 @@ function AppViewModel() {
     // Parameters:
     // i [in] Index of the places list
     self.linkClick = function(i) {
+        bounceCurrentMarker(self.filteredresultList()[i]);
         displayinfowindow(self.filteredresultList()[i]);
+        map.setZoom(18);
+        map.setCenter(self.filteredresultList()[i].mark.getPosition());
     };
 
     //
