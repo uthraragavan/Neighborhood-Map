@@ -22,6 +22,10 @@ Google Maps, Google Places Services, Foursquare and Wunderground.
     * browser-sync
     * ngrok
     * run-sequence
+as defined in package.json by typing the following command:
+```
+npm install
+```
 
 ### Starting Web App
 ##### From github server
