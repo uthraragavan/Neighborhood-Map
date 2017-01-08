@@ -9,11 +9,9 @@
       <title>Neighborhood Map</title>
       <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
       <meta charset="utf-8">
-      <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
       <link rel="stylesheet" href="css/main.css">
-      <script src="https://cdnjs.cloudflare.com/ajax/libs/knockout/3.4.0/knockout-min.js"></script>
       <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
-      <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+
   </head>
   <body>
       <!-- Side Navigation drawer -->
@@ -27,15 +25,21 @@
           </div>
           <!-- Weather div -->
           <div class="weather text-center" data-bind = "with:weatherdata">
-              <h4 data-bind = "text: temp"></h2>
+              <h4 data-bind = "text: temp"></h4>
               <img src = "" alt = "placephoto" data-bind = "attr:{src:weatherurl}"/>
-              <h5 data-bind = "text: weather"><h3>
-              <h5 data-bind = "text: humidity"><h3>
+              <h5 data-bind = "text: weather"></h5>
+              <h5 data-bind = "text: humidity"></h5>
 
           </div>
           <!-- Places list div -->
           <div class="placelist">
-              <ul class="list-group" data-bind="foreach: resultList">
+              <form class="form-inline">
+                  <div class="form-group">
+                      <label for="Filter">Filter</label>
+                      <input class="form-control" id="filter" type="search" placeholder="Search" data-bind="value: findFilter, valueUpdate: 'afterkeydown'" autocomplete="off">
+                  </div>
+              </form>
+              <ul class="list-group" data-bind="foreach: filteredresultList">
                 <li class="list-group-item list-group-item-active" data-bind="click: $parent.linkClick.bind($data,$index())">
                     <span class="label label-primary" data-bind = "text: rating"></span>
                     <span class="glyphicon glyphicon-star" aria-hidden="true"></span>
@@ -79,8 +83,10 @@
           <div id="map"></div>
       </div>
       <!-- Scripts used -->
-      <script src="js/script.js"></script>
-      <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCUoULmJ3JS_gdpeQvAqqFljMjUnO4SgYM&libraries=places&callback=initMap" async defer></script>
+      <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
       <script src="js/knockout-3.4.1.js"></script>
+      <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+      <script src="js/script.js"></script>
+      <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCUoULmJ3JS_gdpeQvAqqFljMjUnO4SgYM&libraries=places&callback=initMap" async defer onerror="initMapError()"></script>
   </body>
 </html>

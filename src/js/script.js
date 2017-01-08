@@ -9,7 +9,7 @@
 //
 
 var drawer = document.querySelector('#drawer');
-var map;
+var map = null;
 var infowindow;
 var pos;
 var pyrmont = {lat: -33.867, lng: 151.195};
@@ -20,6 +20,12 @@ var content;
 var cli_id = 'NEO0GEWJZYJ3LGMYG103A5AJ0L5JME2KRRNERFOMGHVZYP30';
 var cli_sec = 'J4ZFEQAJMHD3NKNPKAE3WLIRBCSMABBBRRAHKMGNZHWNPEO0';
 
+function stringStartsWith(string, startsWith) {
+    string = string || "";
+    if (startsWith.length > string.length)
+        return false;
+    return string.substring(0, startsWith.length) === startsWith;
+};
 //
 // Variables to hold DOM variables for Off Canvas
 //
@@ -47,15 +53,37 @@ function AppViewModel() {
     //
     // View Model variables
     //
-    this.findType = "Restaurants";
-    this.findPlace = "Manhattan, NY";
-    this.resultList = ko.observableArray([]);
-    this.weatherdata = ko.observable({"temp":"--ºF", "weather":"No Weather Data", "weatherurl":"", "humidity":"--%"});
+    self.findType = "Restaurants";
+    self.findPlace = "Manhattan, NY";
+    self.findFilter = ko.observable("");
+    self.resultList = ko.observableArray([]);
+    self.weatherdata = ko.observable({"temp":"--ºF", "weather":"No Weather Data", "weatherurl":"", "humidity":"--%"});
+    self.currentMarker = ko.observable("");
+    //Filter the side navigation drawer and the map markers based on search query
+    self.filteredresultList = ko.computed(function() {
+        var filter = self.findFilter().toLowerCase();
+        if (!filter) {
+           self.resultList().forEach(function(entry) {
+              entry.mark.setVisible(true);
+            });
+            return self.resultList();
+        } else {
+            return ko.utils.arrayFilter(self.resultList(), function(item) {
+                item.mark.setVisible(true);
+                var r = stringStartsWith(item.name.toLowerCase(), filter);
+                if(r === false)
+                {
+                    item.mark.setVisible(false);
+                }
+                return r;
 
+          });
+        }
+    }, self);
     //
     // Function to gather weather data by using AJAX - wunderground API
     //
-    this.getWeather = function() {
+    self.getWeather = function() {
         url = "https://api.wunderground.com/api/ef5a156e62f050d2/conditions/q/" +
               self.findPlace + ".json";
         $.ajax({
@@ -86,16 +114,16 @@ function AppViewModel() {
     // Invoke getweather on creating View Model instance itself
     // so that the weather data binds correctly for display
     //
-    this.getWeather();
+    self.getWeather();
 
     //
     // Function to create the list of places returned from Google Places API
     // Parameter:
     //r [in] Global Results data list
-    this.computeresultList = function(r) {
+    self.computeresultList = function(r) {
         for(var i =0 ; i < r.length; i++)
         {
-            this.resultList.push(r[i]);
+            self.resultList.push(r[i]);
         }
     };
 
@@ -104,22 +132,21 @@ function AppViewModel() {
     // to display the place information in infowindow
     // Parameters:
     // i [in] Index of the places list
-    this.linkClick = function(i) {
-        console.log(self.resultList()[i]);
-        displayinfowindow(self.resultList()[i]);
+    self.linkClick = function(i) {
+        displayinfowindow(self.filteredresultList()[i]);
     };
 
     //
     // Function to handle click of Submit button.
     // Initializes map again and fetches weather data
     //
-    this.submitQuery = function() {
-        if(this.resultList())
+    self.submitQuery = function() {
+        if(self.resultList())
         {
-            this.resultList([]);
+            self.resultList([]);
         }
         initMap();
-        this.getWeather();
+        self.getWeather();
     };
 
 }
@@ -145,6 +172,13 @@ function initMap() {
     service = new google.maps.places.PlacesService(map);
     infowindow = new google.maps.InfoWindow();
     geocoder = new google.maps.Geocoder();
+    map.addListener('center_changed', function() {
+          // 3 seconds after the center of the map has changed, pan back to the
+          // marker.
+          window.setTimeout(function() {
+            map.panTo(myviewModel.currentMarker.getPosition());
+          }, 3000);
+    });
     geocodeAddress(geocoder, map);
 }
 
@@ -178,6 +212,7 @@ function geocodeAddress(geocoder, resultsMap) {
               });
               // Add an event listener to display the infowindow for the address
               // when marker on it is clicked
+              myviewModel.currentMarker = marker;
               google.maps.event.addListener(marker, 'click', function() {
                   infowindow.setContent('<h1>' + place.name + '</h1>');
                   infowindow.open(map, this);
@@ -257,6 +292,9 @@ function callback(results, status) {
 
         }
     }
+    else {
+            alert('Google Places Service was not successful for the following reason: ' + status);
+    }
     //Update the View Model's resultList array as per teh reslist
     myviewModel.computeresultList(reslist);
 }
@@ -267,13 +305,6 @@ function callback(results, status) {
 // Parameter:
 // place [in] Place object
 function displayinfowindow(place) {
-
-    //Bounce the marker of clicked place
-    if (place.mark.getAnimation() !== null) {
-        place.mark.setAnimation(null);
-    } else {
-        place.mark.setAnimation(google.maps.Animation.BOUNCE);
-    }
 
     // Set the content of info window
     content = "<span class='label label-primary'>" + place.rating + "</span>";
@@ -288,85 +319,117 @@ function displayinfowindow(place) {
     // phone number and review to be displayed only in infowindow
     // using Googlr Places Service API
     service.getDetails({
-        placeId: place.place_id
-        }, function(pl, st, marker) {
-              if (st === google.maps.places.PlacesServiceStatus.OK) {
-                    content += "<img src='img/phone.png' alt='phoneimage'>";
-                    if(pl.formatted_phone_number) {
-                      content += "<h6 style='display:inline;'>" + " " + pl.formatted_phone_number + "</h6>";
+      placeId: place.place_id
+      }, function(pl, st, marker) {
+         if (st === google.maps.places.PlacesServiceStatus.OK) {
+              content += "<img src='img/phone.png' alt='phoneimage'>";
+              if(pl.formatted_phone_number) {
+                    content += "<h6 style='display:inline;'>" + " " + pl.formatted_phone_number + "</h6>";
+              }
+              else {
+                    content += "<h6 style='display:inline;'>" + "--" + "</h6>";
+              }
+              if(pl.reviews) {
+                    content += "<p>" + '"' + pl.reviews[0].text + '"' + "</p>";
+              }
+
+          }
+          else
+          {
+              content += "<img src='img/phone.png' alt='phoneimage'>";
+              content += "<h6 style='display:inline;'>" + "--" + "</h6>";
+          }
+          // Additional information such as Website Url of the
+          // place displayed only in infowindow
+          // that is fetched using Ajax request from Third Party API such as FourSquare
+          url = "https://api.foursquare.com/v2/venues/search";
+          url += '?' + $.param({
+                       'v': "20131016",
+                       'near': myviewModel.findPlace,
+                       'query': pl.name + " " + myviewModel.findType,
+                       'client_id': cli_id,
+                       'client_secret': cli_sec
+                       });
+          $.ajax({
+                    url: url,
+                    method: 'GET',
+                    dataType: "json"
+          }).done(function(data) {
+                    console.log(data);
+                    if(data.response.venues.length!=0) {
+                         if(data.response.venues[0].url)
+                          content += "<h6>Website: " + data.response.venues[0].url + "</h6>";
+                        else
+                          content += "<h6>Website: --</h6>"
                     }
                     else {
-                     content += "<h6 style='display:inline;'>" + "--" + "</h6>";
+                       content += "<h6>Website: --</h6>";
                     }
-                  if(pl.reviews) {
-                      content += "<p>" + '"' + pl.reviews[0].text + '"' + "</p>";
-                  }
 
-              }
-              // Additional information such as Website Url of the
-              // place displayed only in infowindow
-              // that is fetched using Ajax request from Third Party API such as FourSquare
-              url = "https://api.foursquare.com/v2/venues/search"
-              url += '?' + $.param({
-                     'v': "20131016",
-                     'near': myviewModel.findPlace,
-                     'query': pl.name + " " + myviewModel.findType,
-                     'client_id': cli_id,
-                     'client_secret': cli_sec
-                     });
-              $.ajax({
-                  url: url,
-                  method: 'GET',
-                  dataType: "json"
-              }).done(function(data) {
-                  console.log(data);
-                  if(data.response.venues.length!=0) {
-                       if(data.response.venues[0].url)
-                        content += "<h6>Website: " + data.response.venues[0].url + "</h6>";
-                      else
-                        content += "<h6>Website: --</h6>"
-                  }
-                  else {
-                     content += "<h6>Website: --</h6>";
-                  }
+                    //Set the content of infowindow
+                    infowindow.setContent(content);
 
-                  //Set the content of infowindow
-                  infowindow.setContent(content);
-
-              }).fail(function(e) {
-                  console.log(e);
-                  content += "<h6>Website: --</h6>";
-                  infowindow.setContent(content);
-                  throw(e);
-              });
-              //infowindow.setContent(content);
+          }).fail(function(e) {
+                    console.log(e);
+                    content += "<h6>Website: --</h6>";
+                    infowindow.setContent(content);
+                    throw(e);
+          });
+                //infowindow.setContent(content);
 
     });
 
-    //Open the infowindow at the marker's place
+      //Open the infowindow at the marker's place
     infowindow.open(map, place.mark);
 }
 
 //
 // Function to create marker on the map given a place
-// Paremeter
+// Parameter
 // place [in] Place object
 function createMarker(place) {
     // Create the marker on the map in the given place's Lat and Lng
     var placeLoc = place.geometry.location;
     var marker = new google.maps.Marker({
-    map: map,
-    position: place.geometry.location,
-    animation: google.maps.Animation.DROP
+      map: map,
+      position: place.geometry.location,
+      animation: google.maps.Animation.DROP
     });
 
     // Add a click event listener to the marker to
     // display the infowindow when clicked
     google.maps.event.addListener(marker, 'click', function() {
+      bounceCurrentMarker(place);
       displayinfowindow(place);
+      map.setZoom(18);
+      map.setCenter(marker.getPosition());
     });
     return marker;
 }
 
+//
+// Function to bounce the marker on the map given a place
+// Parameter
+// place [in] Place object
+function bounceCurrentMarker(place) {
+    //Bounce the marker of clicked place and stop bouncing the previously
+    //clicked marker
+    if(myviewModel.currentMarker)
+        myviewModel.currentMarker.setAnimation(null);
 
+      myviewModel.currentMarker = place.mark;
+      if (place.mark.getAnimation() !== null) {
+          place.mark.setAnimation(null);
+      } else {
+          place.mark.setAnimation(google.maps.Animation.BOUNCE);
+      }
+}
 
+//
+// Function to handle error of calling initMap function
+// when loading Google Map
+// setTimeout(function() { if(map == null){alert("Hello");} }, 3000);
+
+function initMapError() {
+  alert("Unable to load the Google map. Please try again later.");
+}
