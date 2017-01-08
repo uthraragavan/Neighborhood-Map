@@ -175,13 +175,13 @@ function initMap() {
     service = new google.maps.places.PlacesService(map);
     infowindow = new google.maps.InfoWindow();
     geocoder = new google.maps.Geocoder();
-    map.addListener('center_changed', function() {
-          // 3 seconds after the center of the map has changed, pan back to the
-          // marker.
-          window.setTimeout(function() {
-            map.panTo(myviewModel.currentMarker.getPosition());
-          }, 3000);
-    });
+    // map.addListener('center_changed', function() {
+    //       // 3 seconds after the center of the map has changed, pan back to the
+    //       // marker.
+    //       window.setTimeout(function() {
+    //         map.panTo(myviewModel.currentMarker.getPosition());
+    //       }, 3000);
+    // });
     geocodeAddress(geocoder, map);
 }
 
